@@ -521,22 +521,22 @@ extension RouteController: CLLocationManagerDelegate {
         
         print("[RouteController] Checking for faster/updated route...")
 
-        self.getDirections(from: location, along: self.routeProgress) { [weak self] mostSimilarRoute, routes, _ in
-            guard let self else { return }
-            
-            // Every request should reset the lastLocationDate, else we spam the server by calling this method every location update.
-            // If the call fails, tough luck buddy! Then wait until the next interval before retrying
-            self.lastLocationDate = nil
-            
-            // Also only do one 'findFasterRoute' call per time
-            self.isFindingFasterRoute = false
-            
-            guard let route = mostSimilarRoute, let routes else {
-                return
-            }
-            
-            self.applyNewRerouteIfNeeded(mostSimilarRoute: route, allRoutes: routes, currentUpcomingManeuver: currentUpcomingManeuver, durationRemaining: durationRemaining)
-        }
+//        self.getDirections(from: location, along: self.routeProgress) { [weak self] mostSimilarRoute, routes, _ in
+//            guard let self else { return }
+//            
+//            // Every request should reset the lastLocationDate, else we spam the server by calling this method every location update.
+//            // If the call fails, tough luck buddy! Then wait until the next interval before retrying
+//            self.lastLocationDate = nil
+//            
+//            // Also only do one 'findFasterRoute' call per time
+//            self.isFindingFasterRoute = false
+//            
+//            guard let route = mostSimilarRoute, let routes else {
+//                return
+//            }
+//            
+//            self.applyNewRerouteIfNeeded(mostSimilarRoute: route, allRoutes: routes, currentUpcomingManeuver: currentUpcomingManeuver, durationRemaining: durationRemaining)
+//        }
     }
     
     func applyNewRerouteIfNeeded(mostSimilarRoute: Route, allRoutes: [Route], currentUpcomingManeuver: RouteStep, durationRemaining: TimeInterval) {
@@ -632,28 +632,28 @@ extension RouteController: CLLocationManagerDelegate {
 
         lastRerouteLocation = location
 
-        self.getDirections(from: location, along: progress) { [weak self] route, _, error in
-            guard let strongSelf = self else {
-                return
-            }
-            
-            // Update the rerouting state
-            strongSelf.isRerouting = false
-
-            if let error {
-                strongSelf.delegate?.routeController?(strongSelf, didFailToRerouteWith: error)
-                NotificationCenter.default.post(name: .routeControllerDidFailToReroute, object: self, userInfo: [
-                    RouteControllerNotificationUserInfoKey.routingErrorKey: error
-                ])
-                return
-            }
-
-            guard let route else { return }
-
-            strongSelf.routeProgress = RouteProgress(route: route, legIndex: 0)
-            strongSelf.routeProgress.currentLegProgress.stepIndex = 0
-            strongSelf.delegate?.routeController?(strongSelf, didRerouteAlong: route, reason: .divertedFromRoute)
-        }
+//        self.getDirections(from: location, along: progress) { [weak self] route, _, error in
+//            guard let strongSelf = self else {
+//                return
+//            }
+//            
+//            // Update the rerouting state
+//            strongSelf.isRerouting = false
+//
+//            if let error {
+//                strongSelf.delegate?.routeController?(strongSelf, didFailToRerouteWith: error)
+//                NotificationCenter.default.post(name: .routeControllerDidFailToReroute, object: self, userInfo: [
+//                    RouteControllerNotificationUserInfoKey.routingErrorKey: error
+//                ])
+//                return
+//            }
+//
+//            guard let route else { return }
+//
+//            strongSelf.routeProgress = RouteProgress(route: route, legIndex: 0)
+//            strongSelf.routeProgress.currentLegProgress.stepIndex = 0
+//            strongSelf.delegate?.routeController?(strongSelf, didRerouteAlong: route, reason: .divertedFromRoute)
+//        }
     }
 
     private func checkForUpdates() {
