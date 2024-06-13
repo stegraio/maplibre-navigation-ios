@@ -424,7 +424,7 @@ extension RouteController: CLLocationManagerDelegate {
 
     func updateRouteLegProgress(for location: CLLocation) {
         let currentDestination = self.routeProgress.currentLeg.destination
-        guard let remainingVoiceInstructions = routeProgress.currentLegProgress.currentStepProgress.remainingSpokenInstructions else { return }
+        let remainingVoiceInstructions = routeProgress.currentLegProgress.currentStepProgress.remainingSpokenInstructions ?? []
 
         if self.routeProgress.currentLegProgress.remainingSteps.count <= 1, remainingVoiceInstructions.count == 0, currentDestination != self.previousArrivalWaypoint {
             self.previousArrivalWaypoint = currentDestination
