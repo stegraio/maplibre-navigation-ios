@@ -83,7 +83,7 @@ open class NavigationMapView: MLNMapView, UIGestureRecognizerDelegate {
     @objc public dynamic var maneuverArrowColor: UIColor = .defaultManeuverArrow
     @objc public dynamic var maneuverArrowStrokeColor: UIColor = .defaultManeuverArrowStroke
     
-    var userLocationForCourseTracking: CLLocation?
+    public var userLocationForCourseTracking: CLLocation?
     var animatesUserLocation: Bool = false
     var altitude: CLLocationDistance
     var routes: [Route]?
@@ -285,9 +285,11 @@ open class NavigationMapView: MLNMapView, UIGestureRecognizerDelegate {
     @objc func progressDidChange(_ notification: Notification) {
         guard self.tracksUserCourse else { return }
         
-        let routeProgress = notification.userInfo![RouteControllerNotificationUserInfoKey.routeProgressKey] as! RouteProgress
+        return
         
-        if let location = userLocationForCourseTracking {
+        let routeProgress = notification.userInfo![RouteControllerNotificationUserInfoKey.routeProgressKey] as! RouteProgress
+
+        if var location = userLocationForCourseTracking {
             let cameraUpdated = self.courseTrackingDelegate?.updateCamera?(self, location: location, routeProgress: routeProgress) ?? false
             
             if !cameraUpdated {

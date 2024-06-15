@@ -173,7 +173,7 @@ extension CLLocation {
         return true
     }
     
-    func approxActualLocation(distanceInMeters: Double) -> CLLocation {
+    public func approxActualLocation(distanceInMeters: Double) -> CLLocation {
         let bearing = self.course
         let earthRadius = 6378.1 // Radius of the Earth in kilometers
         let bearingRadians = bearing * .pi / 180
