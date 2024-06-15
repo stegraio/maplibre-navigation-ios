@@ -2,13 +2,13 @@ import CoreLocation
 import MapboxDirections
 import Turf
 
-extension CLLocation {
+public extension CLLocation {
     var isQualified: Bool {
         0 ... 100 ~= horizontalAccuracy
     }
     
     /// Returns a dictionary representation of the location.
-    public var dictionaryRepresentation: [String: Any] {
+    var dictionaryRepresentation: [String: Any] {
         var locationDictionary: [String: Any] = [:]
         locationDictionary["lat"] = coordinate.latitude
         locationDictionary["lng"] = coordinate.longitude
@@ -26,7 +26,7 @@ extension CLLocation {
      
      - parameter dictionary: A dictionary representation of the location.
      */
-    public convenience init(dictionary: [String: Any]) {
+    convenience init(dictionary: [String: Any]) {
         let latitude = dictionary["latitude"] as? CLLocationDegrees ?? dictionary["lat"] as? CLLocationDegrees ?? 0
         let longitude = dictionary["longitude"] as? CLLocationDegrees ?? dictionary["lon"] as? CLLocationDegrees ?? dictionary["lng"] as? CLLocationDegrees ?? 0
         let altitude = dictionary["altitude"] as! CLLocationDistance
@@ -173,7 +173,7 @@ extension CLLocation {
         return true
     }
     
-    public func approxActualLocation(distanceInMeters: Double) -> CLLocation {
+    func approxActualLocation(distanceInMeters: Double) -> CLLocation {
         let bearing = self.course
         let earthRadius = 6378.1 // Radius of the Earth in kilometers
         let bearingRadians = bearing * .pi / 180
@@ -189,7 +189,8 @@ extension CLLocation {
         newLon = newLon * 180 / .pi
         
         let newCoordinate = CLLocationCoordinate2D(latitude: newLat, longitude: newLon)
-        let newLocation = CLLocation(latitude: newCoordinate.latitude, longitude: newCoordinate.longitude)
+        let newLocation = CLLocation(coordinate: newCoordinate, altitude: altitude, horizontalAccuracy: horizontalAccuracy, verticalAccuracy: verticalAccuracy, course: course, speed: speed, timestamp: timestamp)
+        
         return newLocation
     }
 }

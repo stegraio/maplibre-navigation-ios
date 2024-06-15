@@ -138,7 +138,9 @@ open class RouteController: NSObject, Router {
     @objc(initWithRoute:directions:locationManager:)
     public init(along route: Route, directions: Directions = Directions.shared, locationManager: NavigationLocationManager = NavigationLocationManager()) {
         self.directions = directions
-        self.routeProgress = RouteProgress(route: route)
+        let location = locationManager.location ?? CLLocation(latitude: 0, longitude: 0)
+        let legIndex = RouteController.findClosestLegIndex(route: route, location: location)
+        self.routeProgress = RouteProgress(route: route, legIndex: legIndex)
         self.locationManager = locationManager
         self.locationManager.activityType = route.routeOptions.activityType
         UIDevice.current.isBatteryMonitoringEnabled = true
@@ -244,6 +246,8 @@ open class RouteController: NSObject, Router {
             self.updateDistanceToManeuver()
         }
     }
+    
+    
 
     func updateDistanceToManeuver() {
         guard let coordinates = routeProgress.currentLegProgress.currentStep.coordinates, let coordinate = rawLocation?.coordinate else {
@@ -294,6 +298,31 @@ open class RouteController: NSObject, Router {
 }
 
 // MARK: - CLLocationManagerDelegate
+
+extension RouteController {
+    static func findClosestLegIndex(route: Route, location: CLLocation) -> Int {
+        var currentClosest: (index: Int, distance: CLLocationDistance)?
+
+        for (currentLegIndex, leg) in route.legs.enumerated() {
+            let coords = leg.steps.compactMap(\.coordinates).flatMap { $0 }
+            
+            guard let closestCoordOnStep = Polyline(coords).closestCoordinate(to: location.coordinate) else { continue }
+            let foundIndex = currentLegIndex
+
+            // First time around, currentClosest will be `nil`.
+            guard let currentClosestDistance = currentClosest?.distance else {
+                currentClosest = (index: foundIndex, distance: closestCoordOnStep.distance)
+                continue
+            }
+
+            if closestCoordOnStep.distance < currentClosestDistance {
+                currentClosest = (index: foundIndex, distance: closestCoordOnStep.distance)
+            }
+        }
+
+        return currentClosest?.index ?? 0
+    }
+}
 
 extension RouteController: CLLocationManagerDelegate {
     @objc func interpolateLocation() {
@@ -406,7 +435,7 @@ extension RouteController: CLLocationManagerDelegate {
         // Check for faster route given users current location
         guard self.reroutesProactively else { return }
         
-        // Only check for faster routes or ETA updates if the user has plenty of time left on the route (10+min)
+        // Ongly check for faster routes or ETA updates if the user has plenty of time left on the route (10+min)
         // Except when configured in the SDK that we may
         guard self.routeProgress.durationRemaining > 600 || !self.shouldCheckForRerouteInLastMinutes else { return }
         
@@ -425,8 +454,9 @@ extension RouteController: CLLocationManagerDelegate {
     func updateRouteLegProgress(for location: CLLocation) {
         let currentDestination = self.routeProgress.currentLeg.destination
         let remainingVoiceInstructions = routeProgress.currentLegProgress.currentStepProgress.remainingSpokenInstructions ?? []
+        let remainingStepDistance = routeProgress.currentLegProgress.currentStepProgress.distanceRemaining
 
-        if self.routeProgress.currentLegProgress.remainingSteps.count <= 1, remainingVoiceInstructions.count == 0, currentDestination != self.previousArrivalWaypoint {
+        if self.routeProgress.currentLegProgress.remainingSteps.count <= 1, remainingStepDistance < 6, remainingVoiceInstructions.count == 0, currentDestination != self.previousArrivalWaypoint {
             self.previousArrivalWaypoint = currentDestination
 
             self.routeProgress.currentLegProgress.userHasArrivedAtWaypoint = true

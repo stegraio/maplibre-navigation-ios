@@ -155,7 +155,7 @@ open class NavigationMapView: MLNMapView, UIGestureRecognizerDelegate {
     open var tracksUserCourse: Bool = false {
         didSet {
             if self.tracksUserCourse {
-                self.enableFrameByFrameCourseViewTracking(for: 3)
+                self.enableFrameByFrameCourseViewTracking(for: 2)
                 self.altitude = self.defaultAltitude
                 self.showsUserLocation = true
                 self.courseTrackingDelegate?.navigationMapViewDidStartTrackingCourse?(self)
@@ -287,36 +287,36 @@ open class NavigationMapView: MLNMapView, UIGestureRecognizerDelegate {
         
         let routeProgress = notification.userInfo![RouteControllerNotificationUserInfoKey.routeProgressKey] as? RouteProgress
 
-        if var location = userLocationForCourseTracking {
-            let cameraUpdated = self.courseTrackingDelegate?.updateCamera?(self, location: location, routeProgress: routeProgress) ?? false
-            
-            if !cameraUpdated {
-                let newCamera = MLNMapCamera(lookingAtCenter: location.coordinate, acrossDistance: self.altitude, pitch: 45, heading: location.course)
-                let function = CAMediaTimingFunction(name: CAMediaTimingFunctionName.linear)
-                setCamera(newCamera, withDuration: 1, animationTimingFunction: function, edgePadding: UIEdgeInsets.zero, completionHandler: nil)
-            }
-        }
-        
-        if routeProgress != nil {
-            let stepProgress = routeProgress!.currentLegProgress.currentStepProgress
-            let expectedTravelTime = stepProgress.step.expectedTravelTime
-            let durationUntilNextManeuver = stepProgress.durationRemaining
-            let durationSincePreviousManeuver = expectedTravelTime - durationUntilNextManeuver
-            guard !UIDevice.current.isPluggedIn else {
-                preferredFramesPerSecond = FrameIntervalOptions.pluggedInFramesPerSecond
-                return
-            }
-            
-            if let upcomingStep = routeProgress!.currentLegProgress.upComingStep,
-               upcomingStep.maneuverDirection == .straightAhead || upcomingStep.maneuverDirection == .slightLeft || upcomingStep.maneuverDirection == .slightRight {
-                preferredFramesPerSecond = self.shouldPositionCourseViewFrameByFrame ? FrameIntervalOptions.defaultFramesPerSecond : FrameIntervalOptions.decreasedFramesPerSecond
-            } else if durationUntilNextManeuver > FrameIntervalOptions.durationUntilNextManeuver,
-                      durationSincePreviousManeuver > FrameIntervalOptions.durationSincePreviousManeuver {
-                preferredFramesPerSecond = self.shouldPositionCourseViewFrameByFrame ? FrameIntervalOptions.defaultFramesPerSecond : FrameIntervalOptions.decreasedFramesPerSecond
-            } else {
-                preferredFramesPerSecond = FrameIntervalOptions.pluggedInFramesPerSecond
-            }
-        }
+//        if var location = userLocationForCourseTracking {
+//            let cameraUpdated = self.courseTrackingDelegate?.updateCamera?(self, location: location, routeProgress: routeProgress) ?? false
+//            
+//            if !cameraUpdated {
+//                let newCamera = MLNMapCamera(lookingAtCenter: location.coordinate, acrossDistance: self.altitude, pitch: 45, heading: location.course)
+//                let function = CAMediaTimingFunction(name: CAMediaTimingFunctionName.linear)
+//                setCamera(newCamera, withDuration: 1, animationTimingFunction: function, edgePadding: UIEdgeInsets.zero, completionHandler: nil)
+//            }
+//        }
+//        
+//        if routeProgress != nil {
+//            let stepProgress = routeProgress!.currentLegProgress.currentStepProgress
+//            let expectedTravelTime = stepProgress.step.expectedTravelTime
+//            let durationUntilNextManeuver = stepProgress.durationRemaining
+//            let durationSincePreviousManeuver = expectedTravelTime - durationUntilNextManeuver
+//            guard !UIDevice.current.isPluggedIn else {
+//                preferredFramesPerSecond = FrameIntervalOptions.pluggedInFramesPerSecond
+//                return
+//            }
+//            
+//            if let upcomingStep = routeProgress!.currentLegProgress.upComingStep,
+//               upcomingStep.maneuverDirection == .straightAhead || upcomingStep.maneuverDirection == .slightLeft || upcomingStep.maneuverDirection == .slightRight {
+//                preferredFramesPerSecond = self.shouldPositionCourseViewFrameByFrame ? FrameIntervalOptions.defaultFramesPerSecond : FrameIntervalOptions.decreasedFramesPerSecond
+//            } else if durationUntilNextManeuver > FrameIntervalOptions.durationUntilNextManeuver,
+//                      durationSincePreviousManeuver > FrameIntervalOptions.durationSincePreviousManeuver {
+//                preferredFramesPerSecond = self.shouldPositionCourseViewFrameByFrame ? FrameIntervalOptions.defaultFramesPerSecond : FrameIntervalOptions.decreasedFramesPerSecond
+//            } else {
+//                preferredFramesPerSecond = FrameIntervalOptions.pluggedInFramesPerSecond
+//            }
+//        }
     }
     
     // Track position on a frame by frame basis. Used for first location update and when resuming tracking mode
@@ -337,29 +337,47 @@ open class NavigationMapView: MLNMapView, UIGestureRecognizerDelegate {
         self.tracksUserCourse = false
     }
     
-    @objc public func updateCourseTracking(location: CLLocation?, camera: MLNMapCamera? = nil, animated: Bool = false) {
+    @objc public func updateCourseTracking(location: CLLocation?, camera: MLNMapCamera? = nil, animated: Bool = false, routeProgress: RouteProgress? = nil, edgeInsets: UIEdgeInsets = UIEdgeInsets.zero, userViewScale: CGFloat = 1.0) {
         // While animating to overhead mode, don't animate the puck.
         let duration: TimeInterval = animated && !self.isAnimatingToOverheadMode ? 1 : 0
         self.animatesUserLocation = animated
-        self.userLocationForCourseTracking = location
-        guard let location, CLLocationCoordinate2DIsValid(location.coordinate) else {
+        guard var location, CLLocationCoordinate2DIsValid(location.coordinate) else {
             return
         }
         
+        location = routeProgress == nil ? location : location.snapped(to: routeProgress!.currentLegProgress) ?? location
+        self.userLocationForCourseTracking = location
+
+        let isFarAway = self.camera.centerCoordinate.distance(to: location.coordinate) > 1000
+        
+
         if !self.tracksUserCourse || self.userAnchorPoint != userCourseView?.center ?? self.userAnchorPoint {
-            UIView.animate(withDuration: duration, delay: 0, options: [.curveLinear, .beginFromCurrentState], animations: {
+            UIView.animate(withDuration: self.tracksUserCourse && isFarAway ? duration : duration, delay: 0, options: [.curveLinear, .beginFromCurrentState], animations: {
                 self.userCourseView?.center = self.convert(location.coordinate, toPointTo: self)
             })
         }
         
-        if let userCourseView = userCourseView as? UserCourseView {
-            if let customTransformation = userCourseView.update?(location: location, pitch: self.camera.pitch, direction: direction, animated: animated, tracksUserCourse: tracksUserCourse) {
+       if let userCourseView = userCourseView as? UserCourseView {
+           if let customTransformation = userCourseView.update?(location: location, pitch: self.camera.pitch, direction: direction, animated: animated, tracksUserCourse: tracksUserCourse, scale: userViewScale) {
                 customTransformation
             } else {
-                self.userCourseView?.applyDefaultUserPuckTransformation(location: location, pitch: self.camera.pitch, direction: direction, animated: animated, tracksUserCourse: self.tracksUserCourse)
+                self.userCourseView?.applyDefaultUserPuckTransformation(location: location, pitch: self.camera.pitch, direction: direction, animated: animated, tracksUserCourse: self.tracksUserCourse, scale: userViewScale)
             }
         } else {
-            userCourseView?.applyDefaultUserPuckTransformation(location: location, pitch: self.camera.pitch, direction: direction, animated: animated, tracksUserCourse: self.tracksUserCourse)
+            userCourseView?.applyDefaultUserPuckTransformation(location: location, pitch: self.camera.pitch, direction: direction, animated: animated, tracksUserCourse: self.tracksUserCourse, scale: userViewScale)
+        }
+        
+        if self.tracksUserCourse {
+            //let newCamera = MLNMapCamera(lookingAtCenter: location.coordinate, acrossDistance: self.altitude, pitch: self.camera.pitch, heading: location.course)
+            let newCamera = self.camera
+            newCamera.centerCoordinate = location.coordinate
+            newCamera.heading = location.course
+            if isFarAway {
+                setCamera(newCamera, withDuration: 0, animationTimingFunction: nil)
+            } else {
+                let function = CAMediaTimingFunction(name: CAMediaTimingFunctionName.linear)
+                setCamera(newCamera, withDuration: 1.0, animationTimingFunction: function, edgePadding: edgeInsets, completionHandler: nil)
+            }
         }
     }
     
