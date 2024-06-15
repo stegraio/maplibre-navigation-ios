@@ -285,9 +285,7 @@ open class NavigationMapView: MLNMapView, UIGestureRecognizerDelegate {
     @objc func progressDidChange(_ notification: Notification) {
         guard self.tracksUserCourse else { return }
         
-        return
-        
-        let routeProgress = notification.userInfo![RouteControllerNotificationUserInfoKey.routeProgressKey] as! RouteProgress
+        let routeProgress = notification.userInfo![RouteControllerNotificationUserInfoKey.routeProgressKey] as? RouteProgress
 
         if var location = userLocationForCourseTracking {
             let cameraUpdated = self.courseTrackingDelegate?.updateCamera?(self, location: location, routeProgress: routeProgress) ?? false
@@ -299,23 +297,25 @@ open class NavigationMapView: MLNMapView, UIGestureRecognizerDelegate {
             }
         }
         
-        let stepProgress = routeProgress.currentLegProgress.currentStepProgress
-        let expectedTravelTime = stepProgress.step.expectedTravelTime
-        let durationUntilNextManeuver = stepProgress.durationRemaining
-        let durationSincePreviousManeuver = expectedTravelTime - durationUntilNextManeuver
-        guard !UIDevice.current.isPluggedIn else {
-            preferredFramesPerSecond = FrameIntervalOptions.pluggedInFramesPerSecond
-            return
-        }
-    
-        if let upcomingStep = routeProgress.currentLegProgress.upComingStep,
-           upcomingStep.maneuverDirection == .straightAhead || upcomingStep.maneuverDirection == .slightLeft || upcomingStep.maneuverDirection == .slightRight {
-            preferredFramesPerSecond = self.shouldPositionCourseViewFrameByFrame ? FrameIntervalOptions.defaultFramesPerSecond : FrameIntervalOptions.decreasedFramesPerSecond
-        } else if durationUntilNextManeuver > FrameIntervalOptions.durationUntilNextManeuver,
-                  durationSincePreviousManeuver > FrameIntervalOptions.durationSincePreviousManeuver {
-            preferredFramesPerSecond = self.shouldPositionCourseViewFrameByFrame ? FrameIntervalOptions.defaultFramesPerSecond : FrameIntervalOptions.decreasedFramesPerSecond
-        } else {
-            preferredFramesPerSecond = FrameIntervalOptions.pluggedInFramesPerSecond
+        if routeProgress != nil {
+            let stepProgress = routeProgress!.currentLegProgress.currentStepProgress
+            let expectedTravelTime = stepProgress.step.expectedTravelTime
+            let durationUntilNextManeuver = stepProgress.durationRemaining
+            let durationSincePreviousManeuver = expectedTravelTime - durationUntilNextManeuver
+            guard !UIDevice.current.isPluggedIn else {
+                preferredFramesPerSecond = FrameIntervalOptions.pluggedInFramesPerSecond
+                return
+            }
+            
+            if let upcomingStep = routeProgress!.currentLegProgress.upComingStep,
+               upcomingStep.maneuverDirection == .straightAhead || upcomingStep.maneuverDirection == .slightLeft || upcomingStep.maneuverDirection == .slightRight {
+                preferredFramesPerSecond = self.shouldPositionCourseViewFrameByFrame ? FrameIntervalOptions.defaultFramesPerSecond : FrameIntervalOptions.decreasedFramesPerSecond
+            } else if durationUntilNextManeuver > FrameIntervalOptions.durationUntilNextManeuver,
+                      durationSincePreviousManeuver > FrameIntervalOptions.durationSincePreviousManeuver {
+                preferredFramesPerSecond = self.shouldPositionCourseViewFrameByFrame ? FrameIntervalOptions.defaultFramesPerSecond : FrameIntervalOptions.decreasedFramesPerSecond
+            } else {
+                preferredFramesPerSecond = FrameIntervalOptions.pluggedInFramesPerSecond
+            }
         }
     }
     
@@ -1257,5 +1257,5 @@ public protocol NavigationMapViewCourseTrackingDelegate: AnyObject {
      - parameter routeProgress: The current route progress
      */
     @objc(navigationMapView:location:routeProgress:)
-    optional func updateCamera(_ mapView: NavigationMapView, location: CLLocation, routeProgress: RouteProgress) -> Bool
+    optional func updateCamera(_ mapView: NavigationMapView, location: CLLocation, routeProgress: RouteProgress?) -> Bool
 }
