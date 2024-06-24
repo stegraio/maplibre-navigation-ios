@@ -163,7 +163,7 @@ open class NavigationMapView: MLNMapView, UIGestureRecognizerDelegate {
                 self.courseTrackingDelegate?.navigationMapViewDidStopTrackingCourse?(self)
             }
             if let location = userLocationForCourseTracking {
-                self.updateCourseTracking(location: location, animated: true)
+                //self.updateCourseTracking(location: location, animated: true)
             }
         }
     }
@@ -178,7 +178,7 @@ open class NavigationMapView: MLNMapView, UIGestureRecognizerDelegate {
             oldValue?.removeFromSuperview()
             if let userCourseView {
                 if let location = userLocationForCourseTracking {
-                    self.updateCourseTracking(location: location, animated: false)
+                    //self.updateCourseTracking(location: location, animated: false)
                 } else {
                     userCourseView.center = self.userAnchorPoint
                 }
@@ -246,7 +246,7 @@ open class NavigationMapView: MLNMapView, UIGestureRecognizerDelegate {
         
         // If the map is in tracking mode, make sure we update the camera after the layout pass.
         if self.tracksUserCourse {
-            self.updateCourseTracking(location: self.userLocationForCourseTracking, camera: camera, animated: false)
+            //self.updateCourseTracking(location: self.userLocationForCourseTracking, camera: camera, animated: false)
         }
     }
     
@@ -337,7 +337,7 @@ open class NavigationMapView: MLNMapView, UIGestureRecognizerDelegate {
         self.tracksUserCourse = false
     }
     
-    @objc public func updateCourseTracking(location: CLLocation?, camera: MLNMapCamera? = nil, animated: Bool = false, routeProgress: RouteProgress? = nil, edgeInsets: UIEdgeInsets = UIEdgeInsets.zero, userViewScale: CGFloat = 1.0) {
+    @objc public func updateCourseTracking(location: CLLocation?, camera: MLNMapCamera? = nil, animated: Bool = false, routeProgress: RouteProgress? = nil, edgeInsets: UIEdgeInsets = UIEdgeInsets.zero, userViewScale: CGFloat = 1.0, useNorthUp: Bool = false) {
         // While animating to overhead mode, don't animate the puck.
         let duration: TimeInterval = animated && !self.isAnimatingToOverheadMode ? 1 : 0
         self.animatesUserLocation = animated
@@ -371,7 +371,7 @@ open class NavigationMapView: MLNMapView, UIGestureRecognizerDelegate {
             //let newCamera = MLNMapCamera(lookingAtCenter: location.coordinate, acrossDistance: self.altitude, pitch: self.camera.pitch, heading: location.course)
             let newCamera = self.camera
             newCamera.centerCoordinate = location.coordinate
-            newCamera.heading = location.course
+            newCamera.heading = useNorthUp ? 0 : location.course
             if isFarAway {
                 setCamera(newCamera, withDuration: 0, animationTimingFunction: nil)
             } else {
