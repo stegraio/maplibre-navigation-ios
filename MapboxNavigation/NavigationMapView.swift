@@ -372,12 +372,12 @@ open class NavigationMapView: MLNMapView, UIGestureRecognizerDelegate {
             let newCamera = self.camera
             newCamera.centerCoordinate = location.coordinate
             newCamera.heading = useNorthUp ? 0 : location.course
-            if isFarAway {
-                setCamera(newCamera, withDuration: 0, animationTimingFunction: nil)
-            } else {
+//            if isFarAway {
+//                setCamera(newCamera, withDuration: 0, animationTimingFunction: nil)
+//            } else {
                 let function = CAMediaTimingFunction(name: CAMediaTimingFunctionName.linear)
                 setCamera(newCamera, withDuration: 1.0, animationTimingFunction: function, edgePadding: edgeInsets, completionHandler: nil)
-            }
+//            }
         }
     }
     
