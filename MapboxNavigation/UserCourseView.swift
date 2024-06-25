@@ -27,7 +27,7 @@ extension UIView {
             let angle = tracksUserCourse ? 0 : CLLocationDegrees(direction - location.course)
             self.layer.setAffineTransform(CGAffineTransform.identity.rotated(by: -CGFloat(angle.toRadians())))
             var transform = CATransform3DRotate(CATransform3DIdentity, CGFloat(CLLocationDegrees(pitch).toRadians()), 1.0, 0, 0)
-            transform = CATransform3DScale(transform, tracksUserCourse ? scale : scale, tracksUserCourse ? scale : scale, 1)
+            transform = CATransform3DScale(transform, tracksUserCourse ? 1.0 : scale, tracksUserCourse ? 1.0 : scale, 1)
             transform.m34 = -1.0 / 1000 // (-1 / distance to projection plane)
             self.layer.sublayerTransform = transform
         }, completion: nil)
@@ -49,7 +49,7 @@ public class UserPuckCourseView: UIView, UserCourseView {
             self.puckView.layer.setAffineTransform(CGAffineTransform.identity.rotated(by: -CGFloat(angle.toRadians())))
             
             var transform = CATransform3DRotate(CATransform3DIdentity, CGFloat(CLLocationDegrees(pitch).toRadians()), 1.0, 0, 0)
-            transform = CATransform3DScale(transform, tracksUserCourse ? scale : scale, tracksUserCourse ? scale : scale, 1)
+            transform = CATransform3DScale(transform, tracksUserCourse ? 1.0 : scale, tracksUserCourse ? 1.0 : scale, 1)
             transform.m34 = -1.0 / 1000 // (-1 / distance to projection plane)
             self.layer.sublayerTransform = transform
             
@@ -98,19 +98,20 @@ public class UserPuckCourseView: UIView, UserCourseView {
 }
 
 class UserPuckStyleKitView: UIView {
-    var fillColor: UIColor = .init(red: 1.000, green: 1.000, blue: 1.000, alpha: 1.000) {
+    var fillColor: UIColor = .init(red: 1.000, green: 1.000, blue: 1.000, alpha: 0.400) {
         didSet {
             setNeedsDisplay()
         }
     }
     
-    var puckColor: UIColor = .init(red: 0.149, green: 0.239, blue: 0.341, alpha: 1.000) {
+    var puckColor: UIColor = .init(red: 1/255.0, green: 145/255.0, blue: 62/255.0, alpha: 1.000) {
+    //var puckColor: UIColor = .init(red: 0.149, green: 0.239, blue: 0.341, alpha: 1.000) {
         didSet {
             setNeedsDisplay()
         }
     }
     
-    var shadowColor: UIColor = .init(red: 0.149, green: 0.239, blue: 0.341, alpha: 0.160) {
+    var shadowColor: UIColor = .init(red: 0.000, green: 0.000, blue: 0.000, alpha: 0.251) {
         didSet {
             setNeedsDisplay()
         }

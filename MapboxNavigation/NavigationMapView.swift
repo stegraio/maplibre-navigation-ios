@@ -376,7 +376,7 @@ open class NavigationMapView: MLNMapView, UIGestureRecognizerDelegate {
 //                setCamera(newCamera, withDuration: 0, animationTimingFunction: nil)
 //            } else {
                 let function = CAMediaTimingFunction(name: CAMediaTimingFunctionName.linear)
-                setCamera(newCamera, withDuration: duration, animationTimingFunction: function, edgePadding: edgeInsets, completionHandler: nil)
+                setCamera(newCamera, withDuration: 1, animationTimingFunction: function, edgePadding: edgeInsets, completionHandler: nil)
 //            }
         }
     }
