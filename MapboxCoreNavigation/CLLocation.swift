@@ -176,7 +176,7 @@ public extension CLLocation {
     func approxActualLocation(distanceInMeters: Double) -> CLLocation {
         let bearing = self.course
         let earthRadius = 6378.1 // Radius of the Earth in kilometers
-        let bearingRadians = bearing * .pi / 180
+        let bearingRadians = bearing.toRadians()
         let d = distanceInMeters / 1000 // Convert distance to kilometers
         let currentLat = self.coordinate.latitude * .pi / 180
         let currentLon = self.coordinate.longitude * .pi / 180
@@ -185,8 +185,8 @@ public extension CLLocation {
         var newLon = currentLon + atan2(sin(bearingRadians) * sin(d / earthRadius) * cos(currentLat), cos(d / earthRadius) - sin(currentLat) * sin(newLat))
         
         // Convert back to degrees
-        newLat = newLat * 180 / .pi
-        newLon = newLon * 180 / .pi
+        newLat = newLat.toDegrees()
+        newLon = newLon.toDegrees()
         
         let newCoordinate = CLLocationCoordinate2D(latitude: newLat, longitude: newLon)
         let newLocation = CLLocation(coordinate: newCoordinate, altitude: altitude, horizontalAccuracy: horizontalAccuracy, verticalAccuracy: verticalAccuracy, course: course, speed: speed, timestamp: timestamp)
