@@ -144,8 +144,8 @@ public extension CLLocation {
         let relativeAnglepointAhead = (wrappedPointAhead - wrappedCourse).wrap(min: -180, max: 180)
         
         let averageRelativeAngle: Double
-        // User is at the beginning of the route, there is no closest point behind the user.
-        = if pointBehindClosest.distance <= 0, pointAheadClosest.distance > 0 {
+            // User is at the beginning of the route, there is no closest point behind the user.
+            = if pointBehindClosest.distance <= 0, pointAheadClosest.distance > 0 {
             relativeAnglepointAhead
             // User is at the end of the route, there is no closest point in front of the user.
         } else if pointAheadClosest.distance <= 0, pointBehindClosest.distance > 0 {
@@ -163,7 +163,7 @@ public extension CLLocation {
     func shouldSnapCourse(toRouteWith course: CLLocationDirection, distanceToFirstCoordinateOnLeg: CLLocationDistance = CLLocationDistanceMax) -> Bool {
         // If the user is near the beginning of leg, allow for unsnapped more often.
         let isWithinDepartureStep = distanceToFirstCoordinateOnLeg < RouteControllerManeuverZoneRadius
-        
+
         if course >= 0,
            speed >= RouteSnappingMinimumSpeed || isWithinDepartureStep,
            horizontalAccuracy < RouteSnappingMinimumHorizontalAccuracy || isWithinDepartureStep,
@@ -192,62 +192,5 @@ public extension CLLocation {
         let newLocation = CLLocation(coordinate: newCoordinate, altitude: altitude, horizontalAccuracy: horizontalAccuracy, verticalAccuracy: verticalAccuracy, course: course, speed: speed, timestamp: timestamp)
         
         return newLocation
-    }
-    
-    
-    func predictLocation(previousLocation: CLLocation) -> CLLocation {
-        let dt = self.timestamp.timeIntervalSince(previousLocation.timestamp)
-        
-        guard dt > 0 else { return self }
-        
-        let currentSpeed = self.speed
-        let currentBearing = self.course * .pi / 180
-        
-        // Initialize Kalman Filters for latitude and longitude
-        let kalmanLat = KalmanFilter(x: previousLocation.coordinate.latitude, v: currentSpeed * cos(currentBearing), p: 1.0, q: 0.01, r: 1.0)
-        let kalmanLon = KalmanFilter(x: previousLocation.coordinate.longitude, v: currentSpeed * sin(currentBearing), p: 1.0, q: 0.01, r: 1.0)
-        
-        // Predict the new position
-        kalmanLat.predict(dt: dt)
-        kalmanLon.predict(dt: dt)
-        
-        // Update with the current measurement
-        kalmanLat.update(z: self.coordinate.latitude)
-        kalmanLon.update(z: self.coordinate.longitude)
-        
-        let newLat = kalmanLat.x
-        let newLon = kalmanLon.x
-        
-        let newCoordinate = CLLocationCoordinate2D(latitude: newLat, longitude: newLon)
-        let newLocation = CLLocation(coordinate: newCoordinate, altitude: self.altitude, horizontalAccuracy: self.horizontalAccuracy, verticalAccuracy: self.verticalAccuracy, course: self.course, speed: self.speed, timestamp: self.timestamp)
-        
-        return newLocation
-    }
-}
-
-class KalmanFilter {
-    var x: Double // Position
-    var v: Double // Velocity
-    var p: Double // Estimation Error Covariance
-    var q: Double // Process Noise Covariance
-    var r: Double // Measurement Noise Covariance
-    
-    init(x: Double, v: Double, p: Double, q: Double, r: Double) {
-        self.x = x
-        self.v = v
-        self.p = p
-        self.q = q
-        self.r = r
-    }
-    
-    func predict(dt: Double) {
-        x += v * dt
-        p += q
-    }
-    
-    func update(z: Double) {
-        let k = p / (p + r) // Kalman Gain
-        x += k * (z - x)
-        p *= (1 - k)
     }
 }
